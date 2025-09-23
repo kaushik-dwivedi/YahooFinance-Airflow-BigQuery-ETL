@@ -1,0 +1,14 @@
+.git
+.env
+.DS_Store
+airflow_settings.yaml
+__pycache__/
+astro
+.venv
+airflow-webserver.pid
+webserver_config.py
+airflow.cfg
+airflow.db
+# Example .gitignore snippet
+astro-project/include/*.json
+!astro-project/include/internal-data-bigquery-kaushik.json

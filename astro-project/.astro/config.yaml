@@ -1,0 +1,13 @@
+project:
+  name: astro-project
+
+postgres:
+  port: 5433  # change to avoid conflict
+
+mounts:
+  - source: ./dags
+    target: /usr/local/airflow/dags
+  - source: ./include
+    target: /usr/local/airflow/include
+  - source: ./data
+    target: /usr/local/airflow/include/data
