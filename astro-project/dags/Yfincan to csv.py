@@ -19,11 +19,11 @@ default_args = {
 with DAG(
     dag_id="fetch_nse_stock_data",
     default_args=default_args,
-    description="Fetch NSE stock data for the last 30 days",
+    description="Fetch NSE stock data for the last 30 days and trigger BigQuery DAG",
     schedule="@daily",
     start_date=datetime(2025, 1, 1),
     catchup=False,
-    tags=["nse", "stocks"],
+    tags=["nse", "stocks", "bigquery"],
 ) as dag:
 
     def fetch_stock_data():
@@ -43,11 +43,30 @@ with DAG(
             )
 
             if not data.empty:
+                # Reset index to move Date from index to column
+                data.reset_index(inplace=True)
+
+                # Rename columns to match BigQuery schema
+                data.rename(columns={
+                    "Date": "Date",
+                    "Open": "Open",
+                    "High": "High",
+                    "Low": "Low",
+                    "Close": "Close",
+                    "Volume": "Volume",
+                    "Dividends": "Dividends",
+                    "Stock Splits": "Stock_Splits"
+                }, inplace=True)
+
+                # Ensure Volume is integer
+                data["Volume"] = data["Volume"].fillna(0).astype(int)
+
+                # Save to CSV without index
                 filename = os.path.join(
                     data_folder,
                     f"{symbol.replace('.NS','')}_last30days.csv"
                 )
-                data.to_csv(filename)
+                data.to_csv(filename, index=False)
                 print(f"✅ Saved {symbol} data to {filename}")
             else:
                 print(f"⚠️ No data found for {symbol}")
@@ -59,8 +78,8 @@ with DAG(
 
     trigger_bq_dag = TriggerDagRunOperator(
         task_id="trigger_sandbox_bigquery_test",
-        trigger_dag_id="sandbox_bigquery_test",  
-        wait_for_completion=False,  
+        trigger_dag_id="sandbox_bigquery_test",
+        wait_for_completion=False,
         reset_dag_run=True,
     )
 
